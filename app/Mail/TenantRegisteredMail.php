@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Mail;
+
+use App\Models\Tenant;
+use App\Models\User;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
+
+class TenantRegisteredMail extends Mailable
+{
+    use Queueable, SerializesModels;
+
+    public function __construct(public User $user, public Tenant $tenant, public string $plainPassword = '') {}
+
+    public function envelope(): Envelope
+    {
+        return new Envelope(subject: 'Welcome to Smart Rental System');
+    }
+
+    public function content(): Content
+    {
+        return new Content(markdown: 'emails.tenant-registered');
+    }
+}
