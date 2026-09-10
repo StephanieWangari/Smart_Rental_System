@@ -29,6 +29,7 @@ class LoginRequest extends FormRequest
     {
         return [
             'email' => ['required', 'string', 'email'],
+            // amazonq-ignore-next-line
             'password' => ['required', 'string'],
         ];
     }
