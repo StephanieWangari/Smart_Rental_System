@@ -22,7 +22,17 @@
         </div>
         <div class="flex justify-between py-2">
             <span class="text-gray-500 dark:text-gray-400">Amount</span>
-            <span class="font-bold text-green-600 dark:text-green-400 text-base">KES {{ number_format($payment->amount, 2) }}</span>
+            <div class="text-right">
+                <span class="font-bold text-green-600 dark:text-green-400 text-base">KES {{ number_format($payment->amount, 2) }}</span>
+                @if(($payment->payment_type ?? 'full') === 'partial')
+                <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400">Partial</span>
+                @if($payment->tenant->property->rent_amount > $payment->amount)
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Balance: KES {{ number_format($payment->tenant->property->rent_amount - $payment->amount, 2) }}</p>
+                @endif
+                @else
+                <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">Full</span>
+                @endif
+            </div>
         </div>
         <div class="flex justify-between py-2">
             <span class="text-gray-500 dark:text-gray-400">Month</span>
@@ -47,10 +57,18 @@
 
     @if($payment->status === 'pending')
     <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">Complete this payment via M-Pesa STK push:</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">Waiting for M-Pesa confirmation on <strong>{{ $payment->phone_number }}</strong>...</p>
+        <div id="statusPoll" class="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
+            <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+            </svg>
+            Checking payment status...
+        </div>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">Didn't get the prompt?</p>
         <button id="stkBtn" onclick="sendStkPush({{ $payment->id }}, '{{ $payment->phone_number }}')"
-                class="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
-            📱 Send M-Pesa Prompt
+                class="mt-1 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
+            📱 Resend M-Pesa Prompt
         </button>
         <p id="stkMsg" class="mt-2 text-sm text-gray-500 dark:text-gray-400"></p>
     </div>
@@ -58,6 +76,19 @@
 </div>
 
 <script>
+@if($payment->status === 'pending')
+const pollInterval = setInterval(() => {
+    fetch('{{ route("payments.status", $payment) }}')
+        .then(r => r.json())
+        .then(data => {
+            if (data.status !== 'pending') {
+                clearInterval(pollInterval);
+                location.reload();
+            }
+        });
+}, 5000);
+@endif
+
 function sendStkPush(paymentId, phone) {
     const btn = document.getElementById('stkBtn');
     const msg = document.getElementById('stkMsg');

@@ -52,36 +52,47 @@ class MpesaController extends Controller
             'TransactionDesc'   => 'Rent Payment',
         ]);
 
-        if ($response->successful()) {
-            $payment->update(['status' => 'pending', 'phone_number' => $request->phone_number]);
+        if ($response->successful() && $response->json('ResponseCode') === '0') {
+            $checkoutRequestId = $response->json('CheckoutRequestID');
+            $payment->update([
+                'status'              => 'pending',
+                'phone_number'        => $request->phone_number,
+                'checkout_request_id' => $checkoutRequestId,
+            ]);
             return response()->json(['message' => 'STK push sent. Check your phone.']);
         }
 
-        return response()->json(['message' => 'Failed to initiate payment.'], 422);
+        Log::error('STK Push failed', ['response' => $response->json()]);
+        return response()->json(['message' => 'Failed to initiate payment. ' . ($response->json('errorMessage') ?? '')], 422);
     }
 
     public function callback(Request $request)
     {
-        $data     = $request->json()->all();
-        $result   = $data['Body']['stkCallback'] ?? null;
+        $data   = $request->json()->all();
+        $result = $data['Body']['stkCallback'] ?? null;
+
+        Log::info('M-Pesa Callback received', ['data' => $data]);
 
         if (!$result) return response()->json(['status' => 'ok']);
 
-        $resultCode = $result['ResultCode'];
-        $metadata   = collect($result['CallbackMetadata']['Item'] ?? []);
+        $resultCode        = (int) $result['ResultCode'];
+        $checkoutRequestId = $result['CheckoutRequestID'] ?? null;
+        $metadata          = collect($result['CallbackMetadata']['Item'] ?? []);
+        $transactionId     = $metadata->firstWhere('Name', 'MpesaReceiptNumber')['Value'] ?? null;
 
-        $transactionId = $metadata->firstWhere('Name', 'MpesaReceiptNumber')['Value'] ?? null;
-        $accountRef    = $result['AccountReference'] ?? '';
-        $paymentId     = str_replace('Rent-', '', $accountRef);
+        $payment = Payment::where('checkout_request_id', $checkoutRequestId)->first();
 
-        $payment = Payment::find($paymentId);
-        if (!$payment) return response()->json(['status' => 'ok']);
+        if (!$payment) {
+            Log::warning('M-Pesa callback: no payment found for CheckoutRequestID', ['id' => $checkoutRequestId]);
+            return response()->json(['status' => 'ok']);
+        }
 
         if ($resultCode === 0) {
             $payment->update(['status' => 'completed', 'mpesa_transaction_id' => $transactionId]);
             Mail::to($payment->tenant->user->email)->send(new PaymentConfirmationMail($payment));
         } else {
             $payment->update(['status' => 'failed']);
+            Log::info('M-Pesa payment failed', ['ResultCode' => $resultCode, 'ResultDesc' => $result['ResultDesc'] ?? '']);
         }
 
         return response()->json(['status' => 'ok']);

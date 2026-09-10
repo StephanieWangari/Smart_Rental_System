@@ -16,11 +16,12 @@ Route::middleware(['auth'])->group(function () {
 
     // Tenant: own payments
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
-    Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
     Route::get('/payments/create', [PaymentController::class, 'create'])->name('payments.create');
     Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+    Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+    Route::get('/payments/{payment}/status', [PaymentController::class, 'status'])->name('payments.status');
 
-    // M-Pesa STK push (authenticated users)
+    // M-Pesa STK push
     Route::post('/mpesa/stk-push', [MpesaController::class, 'stkPush'])->name('mpesa.stk');
 });
 
@@ -29,6 +30,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::resource('properties', PropertyController::class);
     Route::resource('tenants', TenantController::class);
     Route::get('/reports', [PaymentController::class, 'reports'])->name('payments.reports');
+    Route::get('/reports/export', [PaymentController::class, 'exportReport'])->name('payments.export');
     Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
 });
 

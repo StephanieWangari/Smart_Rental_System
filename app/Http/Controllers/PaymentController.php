@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ReportExport;
 use App\Mail\PaymentConfirmationMail;
 use App\Models\Payment;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PaymentController extends Controller
 {
@@ -39,24 +42,34 @@ class PaymentController extends Controller
 
     public function store(Request $request)
     {
+        $tenant = Tenant::with('property')->findOrFail($request->tenant_id);
+        $isPartial = $request->payment_type === 'partial';
+
         $request->validate([
             'tenant_id'    => 'required|exists:tenants,id',
             'phone_number' => 'required|string|max:20',
             'month_paid'   => 'required|string',
+            'payment_type' => 'required|in:full,partial',
+            'amount'       => $isPartial
+                ? 'required|numeric|min:1|max:' . $tenant->property->rent_amount
+                : 'nullable',
         ]);
 
-        $tenant = Tenant::with('property')->findOrFail($request->tenant_id);
+        $amount = $isPartial ? $request->amount : $tenant->property->rent_amount;
 
         $payment = Payment::create([
             'tenant_id'    => $tenant->id,
-            'amount'       => $tenant->property->rent_amount,
+            'amount'       => $amount,
+            'payment_type' => $request->payment_type,
             'phone_number' => $request->phone_number,
             'month_paid'   => $request->month_paid,
             'status'       => 'pending',
         ]);
 
+        $this->triggerStkPush($payment, $request->phone_number);
+
         return redirect()->route('payments.show', $payment)
-            ->with('success', 'Payment initiated. Complete via M-Pesa prompt.');
+            ->with('success', 'M-Pesa prompt sent to ' . $request->phone_number . '. Enter your PIN to complete payment.');
     }
 
     public function show(Payment $payment)
@@ -80,9 +93,57 @@ class PaymentController extends Controller
         return view('payments.reports', compact('monthlyIncome', 'outstanding', 'month'));
     }
 
+    public function exportReport(Request $request)
+    {
+        $month = $request->month ?? now()->format('Y-m');
+        $filename = 'rent-report-' . $month . '.xlsx';
+        return Excel::download(new ReportExport($month), $filename);
+    }
+
+    public function status(Payment $payment)
+    {
+        return response()->json(['status' => $payment->fresh()->status]);
+    }
+
     public function destroy(Payment $payment)
     {
         $payment->delete();
         return redirect()->route('payments.index')->with('success', 'Payment record deleted.');
+    }
+
+    private function triggerStkPush(Payment $payment, string $phone): void
+    {
+        try {
+            $consumerKey    = config('mpesa.consumer_key');
+            $consumerSecret = config('mpesa.consumer_secret');
+            $tokenResponse  = Http::withBasicAuth($consumerKey, $consumerSecret)
+                ->get(config('mpesa.auth_url'));
+            $token     = $tokenResponse->json('access_token');
+            $timestamp = now()->format('YmdHis');
+            $shortcode = config('mpesa.shortcode');
+            $passkey   = config('mpesa.passkey');
+            $password  = base64_encode($shortcode . $passkey . $timestamp);
+            $phone     = preg_replace('/^0/', '254', $phone);
+
+            $response = Http::withToken($token)->post(config('mpesa.stk_url'), [
+                'BusinessShortCode' => $shortcode,
+                'Password'          => $password,
+                'Timestamp'         => $timestamp,
+                'TransactionType'   => 'CustomerPayBillOnline',
+                'Amount'            => (int) $payment->amount,
+                'PartyA'            => $phone,
+                'PartyB'            => $shortcode,
+                'PhoneNumber'       => $phone,
+                'CallBackURL'       => config('mpesa.callback_url'),
+                'AccountReference'  => 'Rent-' . $payment->id,
+                'TransactionDesc'   => 'Rent Payment',
+            ]);
+
+            if ($response->successful() && $response->json('ResponseCode') === '0') {
+                $payment->update(['checkout_request_id' => $response->json('CheckoutRequestID')]);
+            }
+        } catch (\Exception $e) {
+            // Silent fail — tenant can retry from show page
+        }
     }
 }
