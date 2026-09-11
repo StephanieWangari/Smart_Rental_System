@@ -20,26 +20,17 @@ services:
           property: hostport
       - key: DB_CONNECTION
         value: mysql
+      # Set these in the Render dashboard from your external MySQL provider
       - key: DB_HOST
-        fromDatabase:
-          name: smart-rental-db
-          property: host
+        sync: false
       - key: DB_PORT
-        fromDatabase:
-          name: smart-rental-db
-          property: port
+        sync: false
       - key: DB_DATABASE
-        fromDatabase:
-          name: smart-rental-db
-          property: database
+        sync: false
       - key: DB_USERNAME
-        fromDatabase:
-          name: smart-rental-db
-          property: user
+        sync: false
       - key: DB_PASSWORD
-        fromDatabase:
-          name: smart-rental-db
-          property: password
+        sync: false
       - key: SESSION_DRIVER
         value: database
       - key: CACHE_STORE
@@ -78,9 +69,3 @@ services:
         sync: false
       - key: MPESA_CALLBACK_URL
         sync: false
-
-databases:
-  - name: smart-rental-db
-    plan: free
-    databaseName: smart_rental
-    user: smart_rental_user
