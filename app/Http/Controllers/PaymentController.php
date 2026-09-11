@@ -105,10 +105,20 @@ class PaymentController extends Controller
         return response()->json(['status' => $payment->fresh()->status]);
     }
 
+    public function adminIndex(Request $request)
+    {
+        $payments = Payment::with('tenant.user', 'tenant.property')
+            ->when($request->status, fn($q) => $q->where('status', $request->status))
+            ->when($request->month, fn($q) => $q->where('month_paid', $request->month))
+            ->latest()->paginate(15);
+
+        return view('payments.admin-index', compact('payments'));
+    }
+
     public function destroy(Payment $payment)
     {
         $payment->delete();
-        return redirect()->route('payments.index')->with('success', 'Payment record deleted.');
+        return redirect()->route('admin.payments.index')->with('success', 'Payment record deleted.');
     }
 
     private function triggerStkPush(Payment $payment, string $phone): void

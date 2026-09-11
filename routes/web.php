@@ -29,6 +29,7 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::resource('properties', PropertyController::class);
     Route::resource('tenants', TenantController::class);
+    Route::get('/admin/payments', [PaymentController::class, 'adminIndex'])->name('admin.payments.index');
     Route::get('/reports', [PaymentController::class, 'reports'])->name('payments.reports');
     Route::get('/reports/export', [PaymentController::class, 'exportReport'])->name('payments.export');
     Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');

@@ -3,13 +3,19 @@
 
 <div class="flex items-center justify-between mb-8">
     <div>
-        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white">My Payments</h1>
-        <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">Your complete rent payment history</p>
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white">All Payments</h1>
+        <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">Track and manage all rent transactions</p>
     </div>
-    <a href="{{ route('payments.create') }}"
-       class="btn-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg flex items-center gap-2">
-        💳 Pay Rent
-    </a>
+    <div class="flex gap-3">
+        <a href="{{ route('payments.reports') }}"
+           class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm flex items-center gap-2">
+            📈 Reports
+        </a>
+        <a href="{{ route('payments.create') }}"
+           class="btn-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg flex items-center gap-2">
+            + Record Payment
+        </a>
+    </div>
 </div>
 
 <form method="GET" class="mb-6 flex gap-3 flex-wrap">
@@ -23,7 +29,7 @@
     <input type="month" name="month" value="{{ request('month') }}"
            class="border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm">
     <button class="btn-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold">Filter</button>
-    <a href="{{ route('payments.index') }}"
+    <a href="{{ route('admin.payments.index') }}"
        class="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm transition-all">Clear</a>
 </form>
 
@@ -35,6 +41,7 @@
                     <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tenant</th>
                     <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Property</th>
                     <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
+                    <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
                     <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Month</th>
                     <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Transaction ID</th>
                     <th class="text-left px-6 py-3.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
@@ -54,6 +61,11 @@
                     </td>
                     <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ $payment->tenant->property->name }}</td>
                     <td class="px-6 py-4 font-bold text-gray-900 dark:text-white">KES {{ number_format($payment->amount, 2) }}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold {{ ($payment->payment_type ?? 'full') === 'partial' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' }}">
+                            {{ ucfirst($payment->payment_type ?? 'full') }}
+                        </span>
+                    </td>
                     <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ $payment->month_paid }}</td>
                     <td class="px-6 py-4 font-mono text-xs text-gray-500 dark:text-gray-400">{{ $payment->mpesa_transaction_id ?? '-' }}</td>
                     <td class="px-6 py-4">
@@ -72,16 +84,21 @@
                         @endif
                     </td>
                     <td class="px-6 py-4">
-                        <a href="{{ route('payments.show', $payment) }}"
-                           class="px-3 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 text-xs font-semibold hover:bg-violet-100 transition-all">View</a>
+                        <div class="flex items-center gap-2">
+                            <a href="{{ route('payments.show', $payment) }}"
+                               class="px-3 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 text-xs font-semibold hover:bg-violet-100 transition-all">View</a>
+                            <form method="POST" action="{{ route('payments.destroy', $payment) }}" onsubmit="return confirm('Delete this payment?')">
+                                @csrf @method('DELETE')
+                                <button class="px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-semibold hover:bg-red-100 transition-all">Delete</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="px-6 py-16 text-center">
+                    <td colspan="8" class="px-6 py-16 text-center">
                         <div class="text-5xl mb-3">💳</div>
                         <p class="text-gray-500 dark:text-gray-400 font-medium">No payments found.</p>
-                        <a href="{{ route('payments.create') }}" class="text-violet-600 dark:text-violet-400 text-sm hover:underline mt-1 inline-block">Make your first payment →</a>
                     </td>
                 </tr>
                 @endforelse

@@ -16,3 +16,4 @@ Thank you for your payment.
 
 {{ config('app.name') }}
 </x-mail::message>
+

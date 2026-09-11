@@ -9,7 +9,7 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet"/>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="font-sans antialiased bg-gradient-to-br from-green-50 to-green-100 dark:from-gray-950 dark:to-gray-900 min-h-screen transition-colors duration-200">
+<body class="font-sans antialiased bg-gradient-to-br from-indigo-50 to-blue-100 dark:from-gray-950 dark:to-gray-900 min-h-screen transition-colors duration-200">
 
     {{-- Dark mode toggle --}}
     <div class="absolute top-4 right-4">
@@ -23,10 +23,10 @@
     <div class="min-h-screen flex flex-col items-center justify-center px-4">
         {{-- Logo / Brand --}}
         <div class="mb-8 text-center">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-2xl shadow-lg mb-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl shadow-lg mb-4">
                 <span class="text-3xl">🏠</span>
             </div>
-            <h1 class="text-2xl font-bold text-green-800 dark:text-green-400">Smart Rental System</h1>
+            <h1 class="text-2xl font-bold text-indigo-800 dark:text-indigo-400">Smart Rental System</h1>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your properties with ease</p>
         </div>
 
@@ -50,3 +50,4 @@ function themeManager() {
 </script>
 </body>
 </html>
+

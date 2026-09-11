@@ -29,3 +29,4 @@ Access My Dashboard
 Thanks,
 **{{ config('app.name') }}**
 </x-mail::message>
+

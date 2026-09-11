@@ -17,7 +17,7 @@
             <input type="{{ $field['type'] }}" name="{{ $field['name'] }}"
                    value="{{ $field['type'] !== 'password' ? old($field['name']) : '' }}"
                    placeholder="{{ $field['placeholder'] }}"
-                   class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm"
+                   class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-sm"
                    {{ in_array($field['name'], ['name','email','phone']) ? 'required' : 'required' }}>
         </div>
         @endforeach
@@ -25,7 +25,7 @@
         <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assign Property</label>
             <select name="property_id"
-                    class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm" required>
+                    class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-sm" required>
                 <option value="">-- Select Property --</option>
                 @foreach($properties as $property)
                 <option value="{{ $property->id }}" {{ old('property_id') == $property->id ? 'selected' : '' }}>
@@ -38,12 +38,12 @@
         <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Move-in Date</label>
             <input type="date" name="move_in_date" value="{{ old('move_in_date') }}"
-                   class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm" required>
+                   class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-sm" required>
         </div>
 
         <div class="flex gap-3 pt-2">
             <button type="submit"
-                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors">
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors">
                 Register Tenant
             </button>
             <a href="{{ route('tenants.index') }}"
@@ -54,3 +54,4 @@
     </form>
 </div>
 @endsection
+

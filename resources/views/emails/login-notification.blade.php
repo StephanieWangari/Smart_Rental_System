@@ -21,3 +21,4 @@ Review My Account
 Thanks,
 **{{ config('app.name') }}**
 </x-mail::message>
+
